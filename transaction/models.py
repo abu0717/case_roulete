@@ -6,20 +6,6 @@ from cases.models import CaseItem
 # Create your models here.
 User = settings.AUTH_USER_MODEL
 
-
-class TransactionType:
-    CASE_PURCHASE = 'case_purchase'
-    ITEM_DROP = 'item_drop'
-    STEAM_TRADE = 'steam_trade'
-    REWARD = 'reward'
-    TRANSACTION_TYPES = (
-        (CASE_PURCHASE, 'Case Purchase'),
-        (ITEM_DROP, 'Item Drop'),
-        (STEAM_TRADE, 'Steam Trade'),
-        (REWARD, 'Reward'),
-    )
-
-
 class Transaction(models.Model):
     class TransactionType(models.TextChoices):
         CASE_PURCHASE = 'case_purchase', 'Case Purchase'

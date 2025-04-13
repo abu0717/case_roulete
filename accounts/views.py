@@ -1,35 +1,37 @@
-from django.shortcuts import render
 from decimal import Decimal, InvalidOperation
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.conf import settings
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 from .serializers import ProfileSerializer
-from .utils import verify_telegram_auth
-
-# Create your views here.
+from .models import User
 
 
-User = settings.AUTH_USER_MODEL
 
-
-class TelegramAuth(APIView):
+class TelegramSimpleAuthView(APIView):
     def post(self, request):
-        init_data = request.data.get('init_data')
-        if not init_data:
-            return Response({"error": "Missing init_data"}, status=status.HTTP_400_BAD_REQUEST)
-        if not verify_telegram_auth(init_data, settings.TELEGRAM_BOT_TOKEN):
-            return Response({"error": "Invalid init_data"}, status=status.HTTP_400_BAD_REQUEST)
+        telegram_id = request.data.get("telegram_id")
+        username = request.data.get("username")
+        referer_id = request.data.get("referer_id")
 
-        from urllib.parse import parse_qs
-        data = dict(parse_qs(init_data))
-        telegram_id = data["id"][0]
-        username = data.get("username", [None])[0]
+        if not telegram_id:
+            return Response({"error": "telegram_id is required"}, status=400)
 
-        user, created = User.objects.get_or_create(telegram_id=telegram_id, defaults={"username": username})
+        user, created = User.objects.get_or_create(
+            telegram_id=telegram_id,
+            defaults={"username": username}
+        )
+
+        if created and referer_id:
+            try:
+                referer = User.objects.get(telegram_id=referer_id)
+                user.referer = referer
+                user.save()
+                referer.add_balance(500)
+            except User.DoesNotExist:
+                pass
 
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -37,8 +39,8 @@ class TelegramAuth(APIView):
             "refresh": str(refresh),
             "user": {
                 "telegram_id": telegram_id,
-                "username": username,
-                "created": created,
+                "username": user.username,
+                "referred_by": user.referer.telegram_id if user.referer else None
             }
         })
 
