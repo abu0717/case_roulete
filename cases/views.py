@@ -86,7 +86,7 @@ class OpenCaseView(APIView):
             amount=-case.price,
             item=dropped_item
         )
-
+        UserInventory.objects.create(user=user, item=dropped_item)
         return Response({"success": True, "item": CaseItemSerializer(dropped_item).data}, status=200)
 
 

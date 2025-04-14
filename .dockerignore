@@ -1,0 +1,14 @@
+.idea/
+.vscode/
+
+env/
+venv/
+.venv/
+
+.git/
+
+.env/
+
+.gitignore/
+
+README.md
